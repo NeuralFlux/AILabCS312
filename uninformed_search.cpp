@@ -16,6 +16,7 @@ class Node {
     char data;
     bool visited;
     bool found;
+    int depth;
     Node* parent;
 
     Node(int row, int col, char data) {
@@ -24,6 +25,7 @@ class Node {
         this->data = data;
         this->visited = false;
         this->found = false;
+        this->depth = INT32_MAX-1;  // As INT32_MAX overflows when incremented
         this->parent = NULL;
     }
 };
@@ -47,8 +49,9 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
     for(int i = 0; i < 4; i++) {
         if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Possible nodes only
             // Check if node is visited/found already
-            if(graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
-               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true) {
+            if((graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
+               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true) && 
+               graph[current_coord.first][current_coord.second].depth + 1 >= graph[potential_nbrs[i].first][potential_nbrs[i].second].depth) {
                 continue;
             }
 
@@ -64,26 +67,41 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
     return;
 }
 
+// Compare the current state to goal state
 bool goalTest(pair<int, int> current_coord, pair<int, int> dest_coord) {
     return current_coord == dest_coord;
 }
 
+// A Maze class to simulate the maze
 class Maze {
 private:
+    /*
+     graph: Contains all the data and nodes
+     current_coord: The current co-ordinates
+     dest_coord: The destination co-ordinates
+     line_len: The length of a row (no. of chars)
+     mode: BFS, DFS or DFID
+    */
     vector<vector<Node>> graph;
     pair<int, int> current_coord;
     pair<int, int> dest_coord;
     int line_len;
+    char mode;
 public:
     Maze(string file_name) {
         // Read and store input
         string line;
         int row = 0;
+        bool first_line = true;
 
         ifstream infile(file_name);
 
         while (getline(infile, line)) {
-            // cout<< line << endl;
+            if(first_line) {
+                mode = line[0];
+                first_line = false;
+                continue;
+            }
 
             // Get max columns in the maze
             line_len = line.length();
@@ -111,6 +129,27 @@ public:
         graph[0][0].data = '0';
     }
 
+    void performSearch() {
+        // Perform the required search
+        switch (mode) {
+        case '0':
+            BFS();
+            break;
+        
+        case '1':
+            DFS();
+            break;
+        
+        case '2':
+            DFID();
+            break;
+
+        default:
+            cout<< "Please enter a valid search type" << endl;
+            break;
+        }
+    }
+
     void printMaze() {
         // Print the maze character by character
         for (vector<vector<Node>>::const_iterator row = graph.begin(); row != graph.end(); ++row) {
@@ -121,6 +160,37 @@ public:
         }
     }
 
+    int countClosed() {
+        // Count the number of visited nodes
+        int states = 0;
+        for(int i=0; i < graph.size(); i++) {
+            for(int j=0; j < line_len; j++) {
+                if(graph[i][j].visited == true) {
+                    states++;
+                }
+            }
+        }
+
+        return states;
+    }
+
+    void reset() {
+        // Reset the maze to initial configuration
+        current_coord = pair<int, int>(0, 0);
+
+        for (vector<vector<Node>>::iterator row = graph.begin(); row != graph.end(); ++row) {
+            for(vector<Node>::iterator col = row->begin(); col != row->end(); ++col) {
+                col->depth = INT32_MAX-1;
+                col->found = false;
+                col->parent = NULL;
+                col->visited = false;
+            }
+        }
+
+        graph[0][0].depth = 0;
+        graph[0][0].found = true;
+    }
+
     void BFS() {
         // Queue
         queue <pair<int, int>> open;
@@ -128,12 +198,8 @@ public:
         open.push(current_coord);
         graph[current_coord.first][current_coord.second].visited = true;
 
-        int states = 0;
-
         while(!open.empty()) {
             if(goalTest(current_coord, dest_coord) == true) {
-                // printf("Yay! Goal found at %d, %d\n", current_coord.first, current_coord.second);
-                cout<< "States:"<< states <<endl;  // Print states
                 break;
             } else {
 
@@ -141,7 +207,6 @@ public:
                 current_coord = open.front();
                 open.pop();
                 graph[current_coord.first][current_coord.second].visited = true;
-                states++;
 
                 // Initialise neighbors to pass on to moveGen()
                 pair<int, int> neighbors[4];
@@ -157,26 +222,27 @@ public:
                         open.push(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].found = true;
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                        // printf("Neighbors:(%d, %d)\n", neighbors[i].first, neighbors[i].second);
                     }
                 }
             }
         }
+
+        // Print the number of visited states
+        cout<< countClosed() << endl;
     }
+
 
     void DFS() {
         // Stack
         stack <pair<int, int>> open;
-
         open.push(current_coord);
         graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].depth = 0;
 
         int states = 0;
 
         while(!open.empty()) {
             if(goalTest(current_coord, dest_coord) == true) {
-                // printf("Yay! Goal found at %d, %d\n", current_coord.first, current_coord.second);
-                cout<< states <<endl;  // Print states
                 break;
             } else {
 
@@ -184,6 +250,7 @@ public:
                 current_coord = open.top();
                 open.pop();
                 graph[current_coord.first][current_coord.second].visited = true;
+
                 states++;
 
                 // Initialise neighbors to pass on to moveGen()
@@ -199,12 +266,65 @@ public:
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                         open.push(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].found = true;
+                        graph[neighbors[i].first][neighbors[i].second].depth = graph[current_coord.first][current_coord.second].depth + 1;
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                        // printf("Neighbors:(%d, %d)\n", neighbors[i].first, neighbors[i].second);
                     }
                 }
             }
         }
+
+        // Print the number of visited states
+        cout<< countClosed() <<endl;
+    }
+
+    void DB_DFS(Node &node, int max_depth, int &states) {
+        // Update the current position
+        current_coord = pair<int, int> (node.coord.first, node.coord.second);
+
+        // Return if already achieved the goal
+        if(goalTest(current_coord, dest_coord))
+            return;
+
+        // Initialise neighbors to pass on to moveGen()
+        pair<int, int> neighbors[4];
+        for(int i = 0; i < 4; i++) {
+            neighbors[i].first = -1;
+            neighbors[i].second = -1;
+        }
+
+        // Update the visited nodes
+        node.visited = true;
+        states++;
+
+        // Get possible moves from moveGen() and rest remain (-1, -1)
+        moveGen(current_coord, neighbors, graph);
+        for(int i = 0; i < 4; i++) {
+            if(neighbors[i].first != -1 && neighbors[i].second != -1 && node.depth + 1 <= max_depth) {
+                graph[neighbors[i].first][neighbors[i].second].found = true;
+                graph[neighbors[i].first][neighbors[i].second].depth = node.depth + 1;
+                graph[neighbors[i].first][neighbors[i].second].parent = &node;
+
+                DB_DFS(graph[neighbors[i].first][neighbors[i].second], max_depth, states);
+
+                // Return if already achieved the goal
+                if(goalTest(current_coord, dest_coord))
+                    return;
+            }
+        }
+    }
+
+    void DFID() {
+        int max_depth = 0, states = 0, temp_states = 0;
+
+        while (!goalTest(current_coord, dest_coord)) {
+            reset();
+            temp_states = 0;
+
+            DB_DFS(graph[current_coord.first][current_coord.second], max_depth, temp_states);
+            states += temp_states;
+            max_depth++;
+        }
+        cout<< states << endl;
     }
 
     void backTrack() {
@@ -217,45 +337,23 @@ public:
             path_len++;
         }
 
-        int states = 0;
-        for(int i=0; i < graph.size(); i++) {
-            for(int j=0; j < line_len; j++) {
-                if(graph[i][j].visited == true) {
-                    states++;
-                }
-            }
-        }
-        cout<< states << endl << path_len<<endl;
-
-        // Print the solution
-        printMaze();
+        cout<< path_len<<endl;
     }
 };
 
 int main(int argc, char* argv[]) {
     
-    Maze M((string) argv[2]);
+    // Take input
+    Maze M((string) argv[1]);
 
-    char type = argv[1][0];
-    switch (type) {
-    case '0':
-        M.BFS();
-        break;
-    
-    case '1':
-        M.DFS();
-        break;
-    
-    case '2':
-        cout<< "DFID" << endl;
-        break;
+    // Do the required search
+    M.performSearch();    
 
-    default:
-        cout<< "Please enter a valid search type" << endl;
-        break;
-    }
-
+    // Reconstruct path
     M.backTrack();
+
+    // Print the solution
+    M.printMaze();
 
     return 0;
 }
