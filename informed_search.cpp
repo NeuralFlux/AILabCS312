@@ -25,7 +25,7 @@ class Node {
         this->data = data;
         this->visited = false;
         this->found = false;
-        this->depth = INT32_MAX-1;  // As INT32_MAX overflows when incremented
+        this->depth = INT32_MAX;  // As INT32_MAX overflows when incremented
         this->parent = NULL;
     }
 };
@@ -50,8 +50,7 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
         if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Possible nodes only
             // Check if node is visited/found already
             if((graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
-               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true) && 
-               graph[current_coord.first][current_coord.second].depth + 1 >= graph[potential_nbrs[i].first][potential_nbrs[i].second].depth) {
+               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true)) {
                 continue;
             }
 
@@ -229,102 +228,6 @@ public:
 
         // Print the number of visited states
         cout<< countClosed() << endl;
-    }
-
-
-    void DFS() {
-        // Stack
-        stack <pair<int, int>> open;
-        open.push(current_coord);
-        graph[current_coord.first][current_coord.second].visited = true;
-        graph[current_coord.first][current_coord.second].depth = 0;
-
-        int states = 0;
-
-        while(!open.empty()) {
-            if(goalTest(current_coord, dest_coord) == true) {
-                break;
-            } else {
-
-                // Update the current position
-                current_coord = open.top();
-                open.pop();
-                graph[current_coord.first][current_coord.second].visited = true;
-
-                states++;
-
-                // Initialise neighbors to pass on to moveGen()
-                pair<int, int> neighbors[4];
-                for(int i = 0; i < 4; i++) {
-                    neighbors[i].first = -1;
-                    neighbors[i].second = -1;
-                }
-
-                // Get possible moves from moveGen() and rest remain (-1, -1)
-                moveGen(current_coord, neighbors, graph);
-                for(int i = 0; i < 4; i++) {
-                    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
-                        open.push(neighbors[i]);
-                        graph[neighbors[i].first][neighbors[i].second].found = true;
-                        graph[neighbors[i].first][neighbors[i].second].depth = graph[current_coord.first][current_coord.second].depth + 1;
-                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                    }
-                }
-            }
-        }
-
-        // Print the number of visited states
-        cout<< countClosed() <<endl;
-    }
-
-    void DB_DFS(Node &node, int max_depth, int &states) {
-        // Update the current position
-        current_coord = pair<int, int> (node.coord.first, node.coord.second);
-
-        // Return if already achieved the goal
-        if(goalTest(current_coord, dest_coord))
-            return;
-
-        // Initialise neighbors to pass on to moveGen()
-        pair<int, int> neighbors[4];
-        for(int i = 0; i < 4; i++) {
-            neighbors[i].first = -1;
-            neighbors[i].second = -1;
-        }
-
-        // Update the visited nodes
-        node.visited = true;
-        states++;
-
-        // Get possible moves from moveGen() and rest remain (-1, -1)
-        moveGen(current_coord, neighbors, graph);
-        for(int i = 0; i < 4; i++) {
-            if(neighbors[i].first != -1 && neighbors[i].second != -1 && node.depth + 1 <= max_depth) {
-                graph[neighbors[i].first][neighbors[i].second].found = true;
-                graph[neighbors[i].first][neighbors[i].second].depth = node.depth + 1;
-                graph[neighbors[i].first][neighbors[i].second].parent = &node;
-
-                DB_DFS(graph[neighbors[i].first][neighbors[i].second], max_depth, states);
-
-                // Return if already achieved the goal
-                if(goalTest(current_coord, dest_coord))
-                    return;
-            }
-        }
-    }
-
-    void DFID() {
-        int max_depth = 0, states = 0, temp_states = 0;
-
-        while (!goalTest(current_coord, dest_coord)) {
-            reset();
-            temp_states = 0;
-
-            DB_DFS(graph[current_coord.first][current_coord.second], max_depth, temp_states);
-            states += temp_states;
-            max_depth++;
-        }
-        cout<< states << endl;
     }
 
     void backTrack() {
