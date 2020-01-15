@@ -4,7 +4,9 @@
 #include <vector>
 #include <utility>
 #include <set>
-#include <queue>
+
+// As coordinates are used extensively
+typedef pair<int, int> coord;
 
 using namespace std;
 
@@ -12,12 +14,11 @@ class Node {
   public:
   // Found means it's added to the stack
   // Visited means it's been traversed
-    pair<int, int> coord;
+    coord coord;
     char data;
     bool visited;
     bool found;
     int depth;
-    float heuristic;
     Node* parent;
 
     Node(int row, int col, char data) {
@@ -27,19 +28,13 @@ class Node {
         this->visited = false;
         this->found = false;
         this->depth = INT32_MAX;  // As INT32_MAX overflows when incremented
-        this->heuristic = 0;
         this->parent = NULL;
-    }
-
-    bool operator<(const Node* &rhs) {
-        return this->heuristic < rhs->heuristic;
     }
 };
 
-
-void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<vector<Node>>& graph) {
+void moveGen(coord current_coord, coord neighbors[], vector<vector<Node>>& graph) {
     // Initialise potential neighbors (DOWN, UP, RIGHT, LEFT)
-    pair<int, int> potential_nbrs[4];
+    coord potential_nbrs[4];
     potential_nbrs[0].first = current_coord.first + 1;
     potential_nbrs[0].second = current_coord.second;
 
@@ -74,7 +69,7 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
 }
 
 // Compare the current state to goal state
-bool goalTest(pair<int, int> current_coord, pair<int, int> dest_coord) {
+bool goalTest(coord current_coord, coord dest_coord) {
     return current_coord == dest_coord;
 }
 
@@ -89,8 +84,8 @@ private:
      mode: BFS, DFS or DFID
     */
     vector<vector<Node>> graph;
-    pair<int, int> current_coord;
-    pair<int, int> dest_coord;
+    coord current_coord;
+    coord dest_coord;
     int line_len;
     char mode;
 public:
@@ -131,19 +126,16 @@ public:
         }
 
         // Initialise current coord
-        current_coord = make_pair(0, 0);
+        current_coord = coord(0, 0);
         graph[0][0].data = '0';
     }
 
-    /* Heuristics
-    
-    
-    
-    
-    */
+    float heuristic(coord x, coord y) {
+        return abs(x.first - y.first) + abs(x.second - y.second);
+    }
 
-    float heuristic(pair<int, int> x) {
-        return abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second);
+    bool operator >(const coord &node) {
+        return (heuristic(*this, dest_coord) > heuristic(node, dest_coord));
     }
 
     void performSearch() {
@@ -193,13 +185,12 @@ public:
 
     void reset() {
         // Reset the maze to initial configuration
-        current_coord = make_pair(0, 0);
+        current_coord = coord(0, 0);
 
         for (vector<vector<Node>>::iterator row = graph.begin(); row != graph.end(); ++row) {
             for(vector<Node>::iterator col = row->begin(); col != row->end(); ++col) {
                 col->depth = INT32_MAX-1;
                 col->found = false;
-                col->heuristic = 0;
                 col->parent = NULL;
                 col->visited = false;
             }
@@ -211,57 +202,13 @@ public:
 
     void BFS() {
         // Set of nodes
-        priority_queue <Node*> open;
+        set <coord> open;
 
-        open.push(&graph[current_coord.first][current_coord.second]);
+        open.insert(current_coord);
         graph[current_coord.first][current_coord.second].visited = true;
         graph[current_coord.first][current_coord.second].found = true;
 
-        while(!open.empty()) {
-            if(goalTest(open.top()->coord, dest_coord)) {
-                cout<< "Goal Achieved"<<endl;
-                break;
-            } else {
-
-                current_coord = open.top()->coord;
-                open.pop();
-
-                graph[current_coord.first][current_coord.second].heuristic = heuristic(current_coord);
-                graph[current_coord.first][current_coord.second].visited = true;
-                graph[current_coord.first][current_coord.second].found = true;
-
-                // Initialise neighbors to pass on to moveGen()
-                pair<int, int> neighbors[4];
-                for(int i = 0; i < 4; i++) {
-                    neighbors[i].first = -1;
-                    neighbors[i].second = -1;
-                }
-
-                // Get possible moves from moveGen() and rest remain (-1, -1)
-                moveGen(current_coord, neighbors, graph);
-                for(int i = 0; i < 4; i++) {
-                    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
-                        graph[neighbors[i].first][neighbors[i].second].found = true;
-                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
-                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-
-                        open.push(&graph[neighbors[i].first][neighbors[i].second]);
-                    }
-                }
-            }
-        }
-
-        // graph[1][0].heuristic = 6;
-        // graph[2][0].heuristic = 1;
-        // graph[3][0].heuristic = 7;
-        // open.push(&graph[1][0]);
-        // open.push(&graph[2][0]);
-        // open.push(&graph[3][0]);
-        
-        // while (!open.empty()) {
-        //     cout<< "Heu: " << open.top()->heuristic <<endl;
-        //     open.pop();
-        // }
+        while(*open.begin())
 
         // Print the number of visited states
         cout<< countClosed() << endl;
