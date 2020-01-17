@@ -37,6 +37,7 @@ class Node {
 };
 
 
+
 void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<vector<Node>>& graph) {
     // Initialise potential neighbors (DOWN, UP, RIGHT, LEFT)
     pair<int, int> potential_nbrs[4];
