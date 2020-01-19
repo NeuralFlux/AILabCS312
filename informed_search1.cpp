@@ -5,6 +5,7 @@
 #include <utility>
 #include <set>
 #include <queue>
+#define tabu_tenure 5
 
 using namespace std;
 
@@ -161,6 +162,10 @@ public:
              BS();
              break;
 
+         case '3':
+             TS();
+             break;
+
         default:
             cout<< "Please enter a valid search type" << endl;
             break;
@@ -298,10 +303,10 @@ public:
                     neighbors[i].second = -1;
                 }
 
-		//dequeueing the neighbours of the previous current node
-		for(int h=0; h<open.size(); h++) {
-			open.pop();
-		}
+                //dequeueing the neighbours of the previous current node
+                for(int h=0; h<open.size(); h++) {
+                    open.pop();
+                }
 
                 // Get possible moves from moveGen() and rest remain (-1, -1)
                 moveGen(current_coord, neighbors, graph);
@@ -311,7 +316,9 @@ public:
                         graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 
+                        //if(heuristic(current_coord) > heuristic(neighbors[i])) {
                         open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                        //}
                     }
                 }
             }
@@ -321,16 +328,182 @@ public:
     }
 
 
+	void BS() {
+        // Set of nodes
+        priority_queue <Node*> open;
+        // Beam size
+        int beam = 2;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        // Condition to break the while loop 
+        int breakloop = 0;
+
+
+        while(!open.empty()) {
+
+            if(breakloop == 1) { break; }
+
+            for(int k=0; k<open.size(); k++) {
+                if(goalTest(open.top()->coord, dest_coord)) {
+                    cout<< "Goal Achieved"<<endl;
+                    breakloop = 1;
+                    break;
+                } else {
+
+                    current_coord = open.top()->coord;
+                	open.pop();
+
+                	graph[current_coord.first][current_coord.second].heuristic = heuristic(current_coord);
+                	graph[current_coord.first][current_coord.second].visited = true;
+                	graph[current_coord.first][current_coord.second].found = true;
 	
-	/*void Con_of_Beam(priority_queue <Node*> open,priority_queue <Node*> beam) {
+                	// Initialise neighbors to pass on to moveGen()
+                	pair<int, int> neighbors[4];
+                	for(int i = 0; i < 4; i++) {
+                	    neighbors[i].first = -1;
+                	    neighbors[i].second = -1;
+                	}
 
-	while(!beam.empty()) {
+                	// Get possible moves from moveGen() and rest remain (-1, -1)
+                	moveGen(current_coord, neighbors, graph);
+                	for(int i = 0; i < 4; i++) {
+                	    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
+                	        graph[neighbors[i].first][neighbors[i].second].found = true;
+                	        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
+                	        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+
+                	        open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                	    }
+                	}
+                }
+            }
+	    
+	        // Filtering the open queue with beam number of elements
+            priority_queue <Node*> temporary;
+            //cout << open.size() << "  open.size() before\n";
+			if(open.size() > beam) {
+                for(int i=0; i<beam; i++) {
+                    temporary.push(open.top());
+		    open.pop();
+				}
+
+                for(int h=0; h<open.size(); h++) {
+				open.pop();
+			}
+			
+                for(int i=0; i<beam; i++) {
+                    open.push(temporary.top());
+		    temporary.pop();
+				}
+
+            }//cout << open.size() << "  open.size() after\n";
+        }
+        cout<< countClosed() << endl;
+    }	
+
+
+
+    class Queue {
+    private:
+        Node items[tabu_tenure], front, rear;
+    
+    public:
+        Queue(){
+            front = -1;
+            rear = -1;
             
-		
-		//for(int j=0; j<beam.size(); j++) 
-                current_coord = beam.top()->coord;
-                beam.pop();
+        }
+        
+       /* bool isFull(){
+            if(front == 0 && rear == tabu_tenure - 1){
+                return true;
+            }
+            if(front == rear + 1) {
+                return true;
+            }
+            return false;
+        }
+    
+        bool isEmpty(){
+            if(front == -1) return true;
+            else return false;
+        }
+    
+        void enQueue(int element){
+            if(isFull()){
+                cout << "Queue is full";
+            } else {
+                if(front == -1) front = 0;
+                rear = (rear + 1) % tabu_tenure;
+                items[rear] = element;
+                //cout << endl << "Inserted " << element << endl;
+            }
+        }
+    
+        int deQueue(){
+            int element;
+            if(isEmpty()){
+                cout << "Queue is empty" << endl;
+                return(-1);
+            } else {
+                element = items[front];
+                if(front == rear){
+                    front = -1;
+                    rear = -1;
+                } 
+                else {
+                    front=(front+1) % tabu_tenure;
+                }
+                return(element);
+            }
+        }
+    
+        void display()
+        {
+        
+            int i;
+            if(isEmpty()) {
+                cout << endl << "Empty Queue" << endl;
+            }
+            else
+            {
+                cout << "Front -> " << front;
+                cout << endl << "Items -> ";
+                for(i=front; i!=rear;i=(i+1)%tabu_tenure)
+                    cout << items[i];
+                    cout << items[i];
+                    cout << endl << "Rear -> " << rear;
+            }
+        }*/
+    
+    };
 
+
+    void TS() {
+
+        // Set of nodes
+        priority_queue <Node*> open;
+
+        Queue closed;
+
+        pair<int, int> best;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        while(!open.empty())    {
+            if(goalTest(open.top()->coord, dest_coord)) {
+                cout<< "Goal Achieved"<<endl;
+                break;
+            } else {
+
+                current_coord = open.top()->coord;
+                open.pop();
+        
                 graph[current_coord.first][current_coord.second].heuristic = heuristic(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
@@ -342,6 +515,10 @@ public:
                     neighbors[i].second = -1;
                 }
 
+                //dequeueing the neighbours of the previous current node
+                for(int h=0; h<open.size(); h++) {
+                    open.pop();
+                }
 
                 // Get possible moves from moveGen() and rest remain (-1, -1)
                 moveGen(current_coord, neighbors, graph);
@@ -350,98 +527,15 @@ public:
                         graph[neighbors[i].first][neighbors[i].second].found = true;
                         graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-
+            
                         open.push(&graph[neighbors[i].first][neighbors[i].second]);
                     }
                 }
-
-            
-	
-        }
-
-	
-	}
-
-
-	void BS() {
-        // Set of nodes
-        priority_queue <Node*> open;
-	priority_queue <Node*> beam;
-
-	// width of the beam
-	int beam_length = 2;
-
-        open.push(&graph[current_coord.first][current_coord.second]);
-        graph[current_coord.first][current_coord.second].visited = true;
-        graph[current_coord.first][current_coord.second].found = true;
-
-
-	open.pop();
-	graph[0][0].heuristic = heuristic(open.top()->coord);
-	graph[0][0].visited = true;
-	graph[0][0].found = true;
-	pair<int, int> neighbor[4];
-                for(int i = 0; i < 4; i++) {
-                    neighbor[i].first = -1;
-                    neighbor[i].second = -1;
-                }
-	moveGen(current_coord, neighbor, graph);
-	for(int i = 0; i < 4; i++) {
-                    if(neighbor[i].first != -1 && neighbor[i].second != -1) {
-                        graph[neighbor[i].first][neighbor[i].second].found = true;
-                        graph[neighbor[i].first][neighbor[i].second].heuristic = heuristic(neighbor[i]);
-                        graph[neighbor[i].first][neighbor[i].second].parent = &graph[0][0];
-
-                        open.push(&graph[neighbor[i].first][neighbor[i].second]);
-                    }
-         }
-
-	//copying beam_length of nodes in beam
-	if(open.size() > beam_length) {
-		for(int i=0; i<beam_length; i++) {
-			beam.push(open.top());
-			open.pop();
-		}
-	}
-	else {
-		for(int i=0; i<open.size(); i++) {
-			beam.push(open.top());
-			open.pop();
-		}
-	}
-	
-	//dequeueing open
-	if(open.size() > beam_length) {
-		for(int i=0; i<open.size(); i++) {
-			open.pop();
-		}
-	}
-
-
-
-        while(!beam.empty()) {
-		cout << "hello\n";
-            if(goalTest(beam.top()->coord, dest_coord)) {
-                cout<< "Goal Achieved"<<endl;
-                break;
-            } else {
-		
-		Con_of_Beam(open,beam);
-	
-		for(int i=0; i<beam_length; i++) {
-			beam.push(open.top());
-			open.pop();
-		}
-
+        
             }
-	
         }
-
-	
         cout<< countClosed() << endl;
-    }*/
-
-
+    }
 
     void backTrack() {
         // Backtrack the solved maze and update the path
