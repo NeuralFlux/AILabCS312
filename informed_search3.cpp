@@ -79,6 +79,7 @@ bool goalTest(pair<int, int> current_coord, pair<int, int> dest_coord) {
     return current_coord == dest_coord;
 }
 
+
 // A Maze class to simulate the maze
 class Maze {
 private:
