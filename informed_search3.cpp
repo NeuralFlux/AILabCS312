@@ -527,6 +527,11 @@ public:
 
                 current_coord = open.top()->coord;
                 open.pop();
+
+                if(closed.isFull() == true) {
+                    pair<int,int> last_coord = closed.deQueue();
+                }
+                closed.enQueue(current_coord);
         
                 graph[current_coord.first][current_coord.second].heuristic = heuristic(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
@@ -552,7 +557,7 @@ public:
                         graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
                         
-                        if(heuristic(current_coord) > heuristic(neighbors[i])){
+                        //if(heuristic(current_coord) > heuristic(neighbors[i])){
                             for(int k=closed.fronts(); k!=closed.rears(); k=(k+1)%tabu_tenure){
                                 if(closed.item(k).first != neighbors[i].first && closed.item(k).second != neighbors[i].second) {
                                     open.push(&graph[neighbors[i].first][neighbors[i].second]);
@@ -563,7 +568,7 @@ public:
                                 }
                             }
                             
-                        }
+                        //}
                         
                     }
                 }
