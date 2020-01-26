@@ -1,0 +1,27 @@
+file_name (number of (free) cells)
+heuristic: states explored, path
+command to count cells: fgrep -o " " <file_name> | wc -l
+
+maze6x6_1.txt (217)
+h1: 127, 67
+h2: 169, 67
+
+maze6x6_2.txt (217)
+h1: 80, 49
+h2: 96, 47
+
+maze7x15_1.txt (631)
+h1: 313, 135
+h2: 299, 137
+
+maze7x15_2.txt (631)
+h1: 62, 45
+h2: 55, 45
+
+maze15x7_1.txt (1175)
+h1: 689, 239
+h2: 439, 235
+
+maze15x7_2.txt (1175)
+h1: 707, 255
+h2: 643, 261
