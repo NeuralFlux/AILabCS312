@@ -5,6 +5,8 @@
 #include <utility>
 #include <set>
 #include <queue>
+#include<algorithm>
+#define tabu_tenure 3
 
 using namespace std;
 
@@ -26,16 +28,32 @@ class Node {
         this->data = data;
         this->visited = false;
         this->found = false;
-        this->depth = INT32_MAX;  // As INT32_MAX overflows when incremented
+        this->depth = INT32_MAX - 1;
         this->heuristic = 0;
         this->parent = NULL;
     }
 
-    bool operator<(const Node* &rhs) {
-        return this->heuristic < rhs->heuristic;
+    Node(int row, int col, char data, bool vis, bool found, int depth, int heu) {
+        this->coord.first = row;
+        this->coord.second = col;
+        this->data = data;
+        this->visited = vis;
+        this->found = found;
+        this->depth = depth;
+        this->heuristic = heu;
+    }
+
+    bool operator<(const Node &rhs) {
+        return heuristic < rhs.heuristic;
     }
 };
 
+struct LessThanByHeu
+{
+  bool operator()(const Node* lhs, const Node* rhs) const {
+    return lhs->heuristic < rhs->heuristic;
+  }
+};
 
 void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<vector<Node>>& graph) {
     // Initialise potential neighbors (DOWN, UP, RIGHT, LEFT)
@@ -57,7 +75,8 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
         if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Possible nodes only
             // Check if node is visited/found already
             if((graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
-               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true)) {
+               graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true) && 
+               graph[current_coord.first][current_coord.second].depth + 1 >= graph[potential_nbrs[i].first][potential_nbrs[i].second].depth) {
                 continue;
             }
 
@@ -86,13 +105,16 @@ private:
      current_coord: The current co-ordinates
      dest_coord: The destination co-ordinates
      line_len: The length of a row (no. of chars)
-     mode: BFS, DFS or DFID
+     mode: Search type
+     graph_bck: Backup of current maze
     */
     vector<vector<Node>> graph;
     pair<int, int> current_coord;
     pair<int, int> dest_coord;
     int line_len;
     char mode;
+
+    vector<vector<Node>> graph_bck;
 public:
     Maze(string file_name) {
         // Read and store input
@@ -133,17 +155,20 @@ public:
         // Initialise current coord
         current_coord = make_pair(0, 0);
         graph[0][0].data = '0';
+
+        // Create backup of current graph
+        create_bck();
     }
 
-    /* Heuristics
-    
-    
-    
-    
-    */
+     // Manhattan Distance
+    int heuristic_1(pair<int, int> x) {
+        // printf("Heu(%d, %d): %d\n", x.first, x.second, abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
+        return -(abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
+    }
 
-    float heuristic(pair<int, int> x) {
-        return abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second);
+    // Chebyshev Distance
+    int heuristic_2(pair<int, int> x) {
+        return -max(abs(x.first - dest_coord.first), abs(x.second - dest_coord.second));
     }
 
     void performSearch() {
@@ -153,13 +178,21 @@ public:
             BFS();
             break;
         
-        // case '1':
-        //     DFS();
-        //     break;
+         case '1':
+             HC();
+             break;
         
-        // case '2':
-        //     DFID();
-        //     break;
+         case '2':
+             BS();
+             break;
+
+         case '3':
+             TS();
+             break;
+
+         case '4':
+             VND();
+             break;
 
         default:
             cout<< "Please enter a valid search type" << endl;
@@ -209,9 +242,99 @@ public:
         graph[0][0].found = true;
     }
 
+    // Make a backup of current maze
+    void create_bck() {
+        for(int i=0; i<graph.size(); ++i) {
+            vector<Node> temp_vec;
+            for(int j=0; j < graph[i].size(); ++j) {
+                temp_vec.push_back(Node(graph[i][j].coord.first,
+                                        graph[i][j].coord.second,
+                                        graph[i][j].data,
+                                        graph[i][j].visited,
+                                        graph[i][j].found,
+                                        graph[i][j].depth,
+                                        graph[i][j].heuristic));
+            }
+            graph_bck.push_back(temp_vec);
+        }
+    }
+
+    // Save the current maze
+    void save_state() {
+        for(int i=0; i<graph.size(); ++i) {
+            for(int j=0; j < graph[i].size(); ++j) {
+                graph_bck[i][j].coord = graph[i][j].coord;
+                graph_bck[i][j].data = graph[i][j].data;
+                graph_bck[i][j].visited = graph[i][j].visited;
+                graph_bck[i][j].found = graph[i][j].found;
+            }
+        }
+    }
+
+    // Load the saved maze
+    void load_state() {
+        for(int i=0; i<graph_bck.size(); ++i) {
+            for(int j=0; j < graph_bck[i].size(); ++j) {
+                graph[i][j].coord = graph_bck[i][j].coord;
+                graph[i][j].data = graph_bck[i][j].data;
+                graph[i][j].visited = graph_bck[i][j].visited;
+                graph[i][j].found = graph_bck[i][j].found;
+            }
+        }
+    }
+
     void BFS() {
         // Set of nodes
-        priority_queue <Node*> open;
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        while(!open.empty()) {
+            if(goalTest(open.top()->coord, dest_coord)) {
+                cout<< "Goal Achieved"<<endl;
+                break;
+            } else {
+                current_coord = open.top()->coord;
+                open.pop();
+                // cout<< "Top of queue "<< current_coord.first << ", " << current_coord.second <<endl;
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].visited = true;
+                graph[current_coord.first][current_coord.second].found = true;
+                // graph[current_coord.first][current_coord.second].data = '0';
+
+                // Initialise neighbors to pass on to moveGen()
+                pair<int, int> neighbors[4];
+                for(int i = 0; i < 4; i++) {
+                    neighbors[i].first = -1;
+                    neighbors[i].second = -1;
+                }
+
+                // Get possible moves from moveGen() and rest remain (-1, -1)
+                moveGen(current_coord, neighbors, graph);
+                for(int i = 0; i < 4; i++) {
+                    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
+                        graph[neighbors[i].first][neighbors[i].second].found = true;
+                        // graph[neighbors[i].first][neighbors[i].second].data = '1';
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+                        // printf("Heu(%d, %d): %d\n", neighbors[i].first, neighbors[i].second, heuristic_1(neighbors[i]));
+
+                        open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                    }
+                }
+		
+            }
+        }
+
+        // Print the number of visited states
+        cout<< countClosed() << endl;
+    }
+
+    void HC() {
+        // Set of nodes
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
 
         open.push(&graph[current_coord.first][current_coord.second]);
         graph[current_coord.first][current_coord.second].visited = true;
@@ -226,7 +349,7 @@ public:
                 current_coord = open.top()->coord;
                 open.pop();
 
-                graph[current_coord.first][current_coord.second].heuristic = heuristic(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
 
@@ -237,12 +360,17 @@ public:
                     neighbors[i].second = -1;
                 }
 
+                //dequeueing the neighbours of the previous current node
+                for(int h=0; h<open.size(); h++) {
+                    open.pop();
+                }
+
                 // Get possible moves from moveGen() and rest remain (-1, -1)
                 moveGen(current_coord, neighbors, graph);
                 for(int i = 0; i < 4; i++) {
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                         graph[neighbors[i].first][neighbors[i].second].found = true;
-                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 
                         open.push(&graph[neighbors[i].first][neighbors[i].second]);
@@ -251,20 +379,300 @@ public:
             }
         }
 
-        // graph[1][0].heuristic = 6;
-        // graph[2][0].heuristic = 1;
-        // graph[3][0].heuristic = 7;
-        // open.push(&graph[1][0]);
-        // open.push(&graph[2][0]);
-        // open.push(&graph[3][0]);
-        
-        // while (!open.empty()) {
-        //     cout<< "Heu: " << open.top()->heuristic <<endl;
-        //     open.pop();
-        // }
-
-        // Print the number of visited states
         cout<< countClosed() << endl;
+    }
+
+	void BS() {
+        // Set of nodes
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
+
+        // Beam size
+        int beam = 80;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        // Condition to break the while loop 
+        int breakloop = 0;
+
+        while(!open.empty()) {
+
+            if(breakloop == 1) { break; }
+
+            for(int k=0; k<open.size(); k++) {
+                if(goalTest(open.top()->coord, dest_coord)) {
+                    cout<< "Goal Achieved"<<endl;
+                    breakloop = 1;
+                    break;
+                } else {
+
+                    current_coord = open.top()->coord;
+                	open.pop();
+
+                	graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                	graph[current_coord.first][current_coord.second].visited = true;
+                	graph[current_coord.first][current_coord.second].found = true;
+	
+                	// Initialise neighbors to pass on to moveGen()
+                	pair<int, int> neighbors[4];
+                	for(int i = 0; i < 4; i++) {
+                	    neighbors[i].first = -1;
+                	    neighbors[i].second = -1;
+                	}
+
+                	// Get possible moves from moveGen() and rest remain (-1, -1)
+                	moveGen(current_coord, neighbors, graph);
+                	for(int i = 0; i < 4; i++) {
+                	    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
+                	        graph[neighbors[i].first][neighbors[i].second].found = true;
+                	        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                	        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+
+                	        open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                	    }
+                	}
+                }
+            }
+	    
+	        // Filtering the open queue with beam number of elements
+            priority_queue <Node*> temporary;
+            
+			if(open.size() > beam) {
+                for(int i=0; i<beam; i++) {
+                    temporary.push(open.top());
+		            open.pop();
+				}
+                for(int h=0; h<open.size(); h++) {
+				    open.pop();
+			    }
+                for(int i=0; i<beam; i++) {
+                    open.push(temporary.top());
+		            temporary.pop();
+				}
+            }
+        }
+        cout<< countClosed() << endl;
+    }
+
+    void TS() {
+
+        // Set of nodes
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
+
+        deque<pair<int, int>> tabu;
+        bool first = true;
+
+        pair<int, int> best;
+        best.first = current_coord.first;
+        best.second = current_coord.second;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        while(!open.empty()) {
+            if(goalTest(open.top()->coord, dest_coord)) {
+                cout<< "Goal Achieved"<<endl;
+                break;
+            } else {
+
+                if(tabu.size() == tabu_tenure) {
+                    tabu.pop_front();
+                }
+
+                if(!first) {
+                    tabu.push_back(current_coord);
+                }
+                first = false;
+
+                current_coord = open.top()->coord;
+                open.pop();
+
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].visited = true;
+                graph[current_coord.first][current_coord.second].found = true;
+
+                // Initialise neighbors to pass on to moveGen()
+                pair<int, int> neighbors[4];
+                for(int i = 0; i < 4; i++) {
+                    neighbors[i].first = -1;
+                    neighbors[i].second = -1;
+                }
+
+                //dequeueing the neighbours of the previous current node
+                int temp_size = 0;
+                while(temp_size < open.size()) {
+                    open.pop();
+                    temp_size++;
+                }
+
+                // Get possible moves from moveGen() and rest remain (-1, -1)
+                moveGen(current_coord, neighbors, graph);
+
+                bool all_bad = true;
+                for(int i = 0; i < 4; i++) {
+                    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
+                        graph[neighbors[i].first][neighbors[i].second].found = true;
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+                        
+                        // Check if this neighbor is better than current
+                        if(heuristic_1(neighbors[i]) > heuristic_1(current_coord))
+                            all_bad = false;
+
+                        // Check if neighbor is in tabu list
+                        if(tabu.size() == 0) {
+                            open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                        } else {
+                            for(deque<pair<int, int>>::const_iterator k=tabu.begin(); k!=tabu.end(); k++){
+                                if(k->first != neighbors[i].first && k->second != neighbors[i].second) {
+                                    open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                                    if(heuristic_1(best) < heuristic_1(neighbors[i])){
+                                        best.first = neighbors[i].first;
+                                        best.second = neighbors[i].second;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Aspiration Criteria
+                for(int i  = 0; i < 4; i++) {
+                    for(deque<pair<int, int>>::const_iterator k=tabu.begin(); k!=tabu.end(); k++){
+                        if(k->first == neighbors[i].first && k->second == neighbors[i].second && all_bad && heuristic_1(neighbors[i]) > heuristic_1(best)) {
+                            
+                            //dequeueing the bad moves
+                            int temp_size = 0;
+                            while(temp_size < open.size()) {
+                                open.pop();
+                                temp_size++;
+                            }
+
+                            // add the better move and update best move
+                            open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                            best.first = neighbors[i].first;
+                            best.second = neighbors[i].second;
+                        }
+                    }
+                }
+        
+            }
+        }
+        
+        cout<< countClosed() << endl;
+    }
+
+    void DB_DFS(Node &node, int max_depth, vector<pair<int, int>> &next_states) {
+        // Update the current position
+        current_coord = pair<int, int> (node.coord.first, node.coord.second);
+
+        if(node.depth > max_depth)
+            return;
+
+        // Initialise neighbors to pass on to moveGen()
+        pair<int, int> neighbors[4];
+        for(int i = 0; i < 4; i++) {
+            neighbors[i].first = -1;
+            neighbors[i].second = -1;
+        }
+
+        // Update the visited nodes
+        node.visited = true;
+
+        // Get possible moves from moveGen() and rest remain (-1, -1)
+        moveGen(current_coord, neighbors, graph);
+        for(int i = 0; i < 4; i++) {
+        // cout<< neighbors[i].first << " " << neighbors[i].second <<endl;
+            if(neighbors[i].first != -1 && neighbors[i].second != -1 && node.depth + 1 <= max_depth) {
+                graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                graph[neighbors[i].first][neighbors[i].second].found = true;
+                graph[neighbors[i].first][neighbors[i].second].depth = node.depth + 1;
+                graph[neighbors[i].first][neighbors[i].second].parent = &node;
+                
+                bool found_node = false;
+                for(vector<pair<int, int>>::iterator idx = next_states.begin(); idx != next_states.end(); ++idx) {
+                    if(*idx == neighbors[i]) {
+                        found_node = true;
+                        break;
+                    }
+                }
+                if(!found_node && !graph_bck[neighbors[i].first][neighbors[i].second].found
+                    && !graph_bck[neighbors[i].first][neighbors[i].second].visited &&
+                    (graph_bck[neighbors[i].first][neighbors[i].second].data == ' ' || graph_bck[neighbors[i].first][neighbors[i].second].data == '*')) {
+                    next_states.push_back(neighbors[i]);
+                }
+
+                DB_DFS(graph[neighbors[i].first][neighbors[i].second], max_depth, next_states);
+                if(node.depth > max_depth)
+                    return;
+            }
+        }
+    }
+
+    void moveGen_variable(pair<int, int> location, int max_depth, vector<pair<int, int>> &next_states) {
+        save_state();
+
+        for (int depth = 1; depth <= max_depth; depth++) {
+            graph[location.first][location.second].depth = 0;
+            graph[location.first][location.second].found = 0;
+
+            DB_DFS(graph[location.first][location.second], depth, next_states);
+
+            load_state();
+        }
+        current_coord = location;
+    }
+
+    void HC_var(int max_depth) {
+        // Set of nodes
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
+
+        open.push(&graph[current_coord.first][current_coord.second]);
+        graph[current_coord.first][current_coord.second].visited = true;
+        graph[current_coord.first][current_coord.second].found = true;
+
+        while(!open.empty()) {
+            if(goalTest(open.top()->coord, dest_coord)) {
+                current_coord = open.top()->coord;
+                cout<< "Goal Achieved"<<endl;
+                break;
+            } else {
+                current_coord = open.top()->coord;
+                open.pop();
+
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].visited = true;
+                graph[current_coord.first][current_coord.second].found = true;
+
+                // Initialise neighbors to pass on to moveGen()
+                vector<pair<int, int>> neighbors;
+
+                // Get possible moves at depth d
+                moveGen_variable(current_coord, max_depth, neighbors);
+                for(int i = 0; i < neighbors.size(); i++) {
+                    graph[neighbors[i].first][neighbors[i].second].found = true;
+                    graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+
+                    if(graph[neighbors[i].first][neighbors[i].second].parent == NULL)
+                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+
+                    open.push(&graph[neighbors[i].first][neighbors[i].second]);
+                }
+            }
+        }
+    }
+
+    void VND(){
+        // Set of nodes
+        priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
+        int depth = 1;
+
+        while(!goalTest(current_coord, dest_coord)) {
+            HC_var(depth);
+            depth++;
+        }
     }
 
     void backTrack() {
@@ -277,7 +685,8 @@ public:
             path_len++;
         }
 
-        cout<< path_len<<endl;
+        if(mode != '4')
+            cout<< path_len<<endl;
     }
 };
 
