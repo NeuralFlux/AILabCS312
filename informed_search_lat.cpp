@@ -6,7 +6,7 @@
 #include <set>
 #include <queue>
 #include<algorithm>
-#define tabu_tenure 3
+#define tabu_tenure 5
 
 using namespace std;
 
@@ -309,7 +309,7 @@ public:
                 current_coord = open.top()->coord;
                 open.pop();
                 // cout<< "Top of queue "<< current_coord.first << ", " << current_coord.second <<endl;
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
                 // graph[current_coord.first][current_coord.second].data = '0';
@@ -327,9 +327,9 @@ public:
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                         graph[neighbors[i].first][neighbors[i].second].found = true;
                         // graph[neighbors[i].first][neighbors[i].second].data = '1';
-                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                        // printf("Heu(%d, %d): %d\n", neighbors[i].first, neighbors[i].second, heuristic_1(neighbors[i]));
+                        // printf("Heu(%d, %d): %d\n", neighbors[i].first, neighbors[i].second, heuristic_2(neighbors[i]));
 
                         open.push(&graph[neighbors[i].first][neighbors[i].second]);
                     }
@@ -359,7 +359,7 @@ public:
                 current_coord = open.top()->coord;
                 open.pop();
 
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
 
@@ -380,7 +380,7 @@ public:
                 for(int i = 0; i < 4; i++) {
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                         graph[neighbors[i].first][neighbors[i].second].found = true;
-                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 
                         open.push(&graph[neighbors[i].first][neighbors[i].second]);
@@ -420,7 +420,7 @@ public:
                     current_coord = open.top()->coord;
                 	open.pop();
 
-                	graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                	graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 	graph[current_coord.first][current_coord.second].visited = true;
                 	graph[current_coord.first][current_coord.second].found = true;
 	
@@ -436,7 +436,7 @@ public:
                 	for(int i = 0; i < 4; i++) {
                 	    if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                 	        graph[neighbors[i].first][neighbors[i].second].found = true;
-                	        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                	        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
                 	        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 
                 	        open.push(&graph[neighbors[i].first][neighbors[i].second]);
@@ -499,7 +499,7 @@ public:
                 current_coord = open.top()->coord;
                 open.pop();
 
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
 
@@ -524,11 +524,11 @@ public:
                 for(int i = 0; i < 4; i++) {
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
                         graph[neighbors[i].first][neighbors[i].second].found = true;
-                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
                         graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
                         
                         // Check if this neighbor is better than current
-                        if(heuristic_1(neighbors[i]) > heuristic_1(current_coord))
+                        if(heuristic_2(neighbors[i]) > heuristic_2(current_coord))
                             all_bad = false;
 
                         // Check if neighbor is in tabu list
@@ -538,7 +538,7 @@ public:
                             for(deque<pair<int, int>>::const_iterator k=tabu.begin(); k!=tabu.end(); k++){
                                 if(k->first != neighbors[i].first && k->second != neighbors[i].second) {
                                     open.push(&graph[neighbors[i].first][neighbors[i].second]);
-                                    if(heuristic_1(best) < heuristic_1(neighbors[i])){
+                                    if(heuristic_2(best) < heuristic_2(neighbors[i])){
                                         best.first = neighbors[i].first;
                                         best.second = neighbors[i].second;
                                     }
@@ -551,7 +551,7 @@ public:
                 // Aspiration Criteria
                 for(int i  = 0; i < 4; i++) {
                     for(deque<pair<int, int>>::const_iterator k=tabu.begin(); k!=tabu.end(); k++){
-                        if(k->first == neighbors[i].first && k->second == neighbors[i].second && all_bad && heuristic_1(neighbors[i]) > heuristic_1(best)) {
+                        if(k->first == neighbors[i].first && k->second == neighbors[i].second && all_bad && heuristic_2(neighbors[i]) > heuristic_2(best)) {
                             
                             //dequeueing the bad moves
                             int temp_size = 0;
@@ -596,7 +596,7 @@ public:
         for(int i = 0; i < 4; i++) {
         // cout<< neighbors[i].first << " " << neighbors[i].second <<endl;
             if(neighbors[i].first != -1 && neighbors[i].second != -1 && node.depth + 1 <= max_depth) {
-                graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
                 graph[neighbors[i].first][neighbors[i].second].found = true;
                 graph[neighbors[i].first][neighbors[i].second].depth = node.depth + 1;
                 graph[neighbors[i].first][neighbors[i].second].parent = &node;
@@ -652,26 +652,21 @@ public:
                 current_coord = open.top()->coord;
                 open.pop();
 
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
 
                 // Initialise neighbors to pass on to moveGen()
                 vector<pair<int, int>> neighbors;
 
-                //dequeueing the neighbours of the previous current node
-                for(int h=0; h<open.size(); h++) {
-                    open.pop();
-                }
-
                 // Get possible moves at depth d
                 moveGen_variable(current_coord, max_depth, neighbors);
                 for(int i = 0; i < neighbors.size(); i++) {
                     graph[neighbors[i].first][neighbors[i].second].found = true;
-                    graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+                    graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 
-
-                    graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+                    if(graph[neighbors[i].first][neighbors[i].second].parent == NULL)
+                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 
                     open.push(&graph[neighbors[i].first][neighbors[i].second]);
                 }
@@ -683,7 +678,6 @@ public:
         int depth = 1;
 
         while(!goalTest(current_coord, dest_coord)) {
-            reset();
             HC_var(depth);
             depth++;
         }
