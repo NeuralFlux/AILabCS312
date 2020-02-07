@@ -659,7 +659,14 @@ class TSP {
     	//Crossover of the parents and replacing parents with obtained children in the population
     	std::vector<solution> v = PMX(parent1,parent2,v1,v2);
     	states[place1] = v[0];
-    	states[place2] = v[1]; 
+    	states[place2] = v[1];
+
+		int num = (rand() % 1);
+		if(!num) {
+			states[place1] = mutation(states[place1]);
+		} else {
+			states[place2] = mutation(states[place2]);
+		}
 
     	count++;
 	    }

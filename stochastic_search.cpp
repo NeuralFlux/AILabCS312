@@ -136,7 +136,7 @@ class TSP {
     // Simulated Annealing
     void sim_anneal() {
         // Init Temp
-        double Temperature = 100, epsilon = 0.01;
+        double Temperature = 100, epsilon = 0.5;
 
         // Lower Temperature slowly
         while(Temperature > epsilon) {
