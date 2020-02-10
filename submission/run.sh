@@ -1,2 +1,2 @@
-g++ lab3.cpp
-./a.out $1 $2
+g++ code.cpp
+./a.out $1

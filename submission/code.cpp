@@ -6,6 +6,7 @@
 #include <cmath>
 #include <stdlib.h>
 #include <time.h>
+#include <random>
 
 using namespace std;
 
@@ -14,7 +15,7 @@ struct vertex {
   private:
     double x;
     double y;
-  
+
   public:
     vertex(double x, double y) {
         this->x = x;
@@ -35,6 +36,7 @@ struct solution {
         cout<< endl;
     }
 };
+
 
 // Main class
 class TSP {
@@ -87,17 +89,8 @@ class TSP {
         for(int i=0; i<n_cities; ++i) {
             current_state.nodes.push_back(i);
         }
-        current_state.print_soln();
-        cout<< heuristic(current_state) << endl;
-
-        // cout<< euc << endl;
-        // cout<< n_cities << endl;
-        // for(vector<vector<double>>::const_iterator vtx = graph.begin(); vtx != graph.end(); ++vtx) {
-        //     for(vector<double>::const_iterator edge = vtx->begin(); edge != vtx->end(); ++edge) {
-        //         printf(" %.10f", *edge);
-        //     }
-        //     cout<< endl;
-        // }
+        // current_state.print_soln();
+        // cout<< heuristic(current_state) << endl;
     }
 
     double heuristic(solution state) {
@@ -133,22 +126,47 @@ class TSP {
         return 1 / (1 + exp(-val/temperature));
     }
 
+    // Cooling schedule
+    double updateTemp(double temp, double temp_max, double temp_min, int iter, int iter_max) {
+
+        // Linear Sched
+        double slope = (temp_max - temp_min)/(0 - iter_max);
+        // return iter*slope + temp_max;
+
+        // Geometric Cooling Schedule
+        return 0.999 * temp;
+
+        // Hyperbolic Sched
+        return (double) iter_max / (double) (iter + 1);
+
+    }
+
     // Simulated Annealing
-    void sim_anneal() {
+    void SimulatedAnnealing(clock_t start) {
         // Init Temp
-        double Temperature = 100, epsilon = 0.5;
+        double TEMP_MAX = 100, TEMP_MIN = 0.5;
+        double Temperature = TEMP_MAX;
+        int max_iters = 10000, min_moves = 5;
 
         // Lower Temperature slowly
-        while(Temperature > epsilon) {
-            cout<< "Temperature: " << Temperature << endl;
+        for(int iter = 0; iter < max_iters; ++iter) {
+            clock_t current;
+            double cpu_time_used;
+            current = clock();
+            cpu_time_used = ((double) (current - start)) / CLOCKS_PER_SEC;
+
+            if(Temperature <= 1.1 || cpu_time_used >= 280) {
+                break;
+            }
+            // cout<< "Temperature: " << Temperature << endl;
 
             // Get neighboring solutions
             vector<solution> next_states;
             moveGen(next_states);
 
             // Make a random move depending on its probability
-            bool made_move = false;
-            while (!made_move) {
+            int moves = 0;
+            while (moves < min_moves) {
                 // Generate random move
                 int check_move = rand() % n_cities;
                 double diff_eval, next_eval;
@@ -164,24 +182,29 @@ class TSP {
                 // Make move if prob less than rand val
                 if(prob <= rand_float) {
                     current_state = next_states[check_move];
-                    made_move = true;
+                    moves++;
+                    // cout<< "Eval: " << heuristic(current_state) << endl;
                 }
             }
-            
-            cout<< "Eval: " << heuristic(current_state) << endl;
-            Temperature -= epsilon;
+            Temperature = updateTemp(Temperature, TEMP_MAX, TEMP_MIN, iter, max_iters);
         }
+
+        current_state.print_soln();
+        // cout << heuristic(current_state) <<endl;
     }
 };
 
 
 int main(int argc, char* argv[]) {
 
+    clock_t start;
+    start = clock();
+
     TSP T((string) argv[1]);
 
     srand(time(NULL));
 
-    T.sim_anneal();
+    T.SimulatedAnnealing(start);
 
     return 0;
 }
