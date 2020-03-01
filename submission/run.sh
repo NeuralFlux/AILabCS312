@@ -1,2 +1,1 @@
-g++ code.cpp
-./a.out $1
+python3 tsp_comp.py $1
