@@ -35,7 +35,7 @@ class Node {
     }
 
     bool operator<(const Node &rhs) {
-        return heuristic < rhs.heuristic;
+        return f < rhs.f;
     }
 };
 
@@ -191,7 +191,7 @@ public:
     int heuristic_3(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
-        return - (x_2 + y_2) * 1;
+        return - (x_2 + y_2);
     }
 
     void performSearch() {
@@ -322,11 +322,6 @@ public:
         // Print the number of visited states
         cout<< countClosed() << endl;
     }
-
-	
-
-
- 
 
     void backTrack() {
         // Backtrack the solved maze and update the path

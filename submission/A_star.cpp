@@ -2,10 +2,7 @@
 #include <fstream>
 #include <cstring>
 #include <vector>
-#include <utility>
-#include <set>
 #include <queue>
-#include <algorithm>
 #include <cmath>
 
 using namespace std;
@@ -19,9 +16,9 @@ class Node {
     bool visited;
     bool found;
     int depth;
-    float h;
-    float f;
+    float heuristic;
     float g;
+    float f;
     Node* parent;
 
     Node(int row, int col, char data) {
@@ -31,21 +28,22 @@ class Node {
         this->visited = false;
         this->found = false;
         this->depth = INT32_MAX - 1;
-        this->h = 0;
+        this->heuristic = 0;
+        this->g = 0;
         this->f = 0;
-        this->g = INT32_MAX;
         this->parent = NULL;
     }
 
     bool operator<(const Node &rhs) {
-        return f > rhs.f;
+        return f < rhs.f;
     }
 };
 
+// Struct for comparison overloading between Nodes
 struct LessThanByHeu
 {
   bool operator()(const Node* lhs, const Node* rhs) const {
-    return lhs->f > rhs->f;
+    return lhs->f < rhs->f;
   }
 };
 
@@ -85,6 +83,31 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
     }
     return;
 }
+
+// Helper for A*, update the costs of children of the node updated
+void PropogateImprovement(pair<int,int> neighbor, vector<vector<Node>>& graph) {
+	pair<int, int> neighbors1[4];
+	for(int i = 0; i < 4; i++) {
+		neighbors1[i].first = -1;
+		neighbors1[i].second = -1;
+	}
+	moveGen(neighbor, neighbors1, graph);
+	for(int i=0; i<4; i++) {
+		if(neighbor.first != -1 && neighbor.second != -1) {
+			float new_g = - graph[neighbor.first][neighbor.second].g + 1;
+			float g_s = - graph[neighbor.first][neighbor.second].g;
+			if(new_g < g_s) {
+				graph[neighbors1[i].first][neighbors1[i].second].parent = &graph[neighbor.first][neighbor.second];
+				graph[neighbors1[i].first][neighbors1[i].second].g = - new_g;
+				if(graph[neighbors1[i].first][neighbors1[i].second].visited == true)
+				{
+					PropogateImprovement(neighbors1[i], graph);
+				}
+			}
+		}
+	}
+}
+
 
 // Compare the current state to goal state
 bool goalTest(pair<int, int> current_coord, pair<int, int> dest_coord) {
@@ -154,21 +177,21 @@ public:
     // Manhattan Distance (Underestimating Heuristic)
     int heuristic_1(pair<int, int> x) {
         // printf("Heu(%d, %d): %d\n", x.first, x.second, abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
-        return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
+        return - (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
     // Euclidean Distance (Monotone)
     int heuristic_2(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
-        return pow((x_2 + y_2), 0.5);
+        return - pow((x_2 + y_2), 0.5);
     }
 
     // Overestimating Heuristic
     int heuristic_3(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
-        return (x_2 + y_2);
+        return - (x_2 + y_2);
     }
 
     void performSearch() {
@@ -180,7 +203,7 @@ public:
         start = clock();
 
         // Perform the required search
-        BFS();
+        A_star();
 
         // Calculate time taken
         end = clock();
@@ -213,23 +236,28 @@ public:
         return states;
     }
 
-    void BFS() {
+    void A_star() {
         // Set of nodes
         priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
 
         open.push(&graph[current_coord.first][current_coord.second]);
         graph[current_coord.first][current_coord.second].visited = true;
         graph[current_coord.first][current_coord.second].found = true;
-        graph[current_coord.first][current_coord.second].g = 0;
+        graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
+        graph[current_coord.first][current_coord.second].f = heuristic_2(current_coord);
 
         while(!open.empty()) {
+
             if(goalTest(open.top()->coord, dest_coord)) {
                 cout<< "Goal Achieved"<<endl;
                 break;
             } else {
                 current_coord = open.top()->coord;
                 open.pop();
+
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].visited = true;
+                graph[current_coord.first][current_coord.second].found = true;
 
                 // Initialise neighbors to pass on to moveGen()
                 pair<int, int> neighbors[4];
@@ -241,37 +269,58 @@ public:
                 // Get possible moves from moveGen() and rest remain (-1, -1)
                 moveGen(current_coord, neighbors, graph);
                 for(int i = 0; i < 4; i++) {
+
+                    // If neighbour is valid
                     if(neighbors[i].first != -1 && neighbors[i].second != -1) {
 
-                        if(graph[neighbors[i].first][neighbors[i].second].found == false && 
-                           graph[neighbors[i].first][neighbors[i].second].visited == false) {
+                        // Case I - New node
+                    	if(graph[neighbors[i].first][neighbors[i].second].found == false &&
+                    		graph[neighbors[i].first][neighbors[i].second].visited == false)
+	                    {
+	                    	graph[neighbors[i].first][neighbors[i].second].found = true;
+	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+	                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+	                        graph[neighbors[i].first][neighbors[i].second].g = - (graph[neighbors[i].first][neighbors[i].second].parent->g + 1);
+	                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + heuristic_2(neighbors[i]);
+	                        open.push(&graph[neighbors[i].first][neighbors[i].second]);
+	                    }
 
-                            graph[neighbors[i].first][neighbors[i].second].found = true;
-                            graph[neighbors[i].first][neighbors[i].second].h = heuristic_2(neighbors[i]);
-                            graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                            graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
-                            graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].h + graph[neighbors[i].first][neighbors[i].second].g;
+                        // Case II - Node in open
+	                    else if(graph[neighbors[i].first][neighbors[i].second].found == true &&
+                    		graph[neighbors[i].first][neighbors[i].second].visited == false)
+	                    {
+	                    	float neigh_g = graph[current_coord.first][current_coord.second].g;
+	                    	if( - graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
+	                    	{
+	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+		                        graph[neighbors[i].first][neighbors[i].second].g = - (graph[neighbors[i].first][neighbors[i].second].parent->g + 1);
+		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + heuristic_2(neighbors[i]);
+	                    	}
+	                    }
 
-                            open.push(&graph[neighbors[i].first][neighbors[i].second]);
-                           }
-                        
-                        else if(graph[neighbors[i].first][neighbors[i].second].found == true && 
-                           graph[neighbors[i].first][neighbors[i].second].visited == false) {
-
-                                if(graph[current_coord.first][current_coord.second].g + 1 < graph[neighbors[i].first][neighbors[i].second].g) {
-                                    graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
-                                    graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
-                                    graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].h + graph[neighbors[i].first][neighbors[i].second].g;
-                                }
-                           }
+                        // Case III - Node in closed
+	                    else if(graph[neighbors[i].first][neighbors[i].second].visited == true)
+	                    {
+	                    	float neigh_g = graph[current_coord.first][current_coord.second].g;
+	                    	if( - graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
+	                    	{
+	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
+		                        graph[neighbors[i].first][neighbors[i].second].g = - (graph[neighbors[i].first][neighbors[i].second].parent->g + 1);
+		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + heuristic_2(neighbors[i]);
+		                        PropogateImprovement(neighbors[i],graph);
+		                    }
+	                    }
                     }
                 }
-
             }
         }
 
         // Print the number of visited states
-        cout<< countClosed() << endl;
+        // cout<< countClosed() << endl;
     }
 
     void backTrack() {
@@ -283,9 +332,6 @@ public:
             tracer = tracer->parent;
             path_len++;
         }
-
-        if(mode != '4')
-            cout<< path_len<<endl;
     }
 };
 
@@ -301,7 +347,9 @@ int main(int argc, char* argv[]) {
     M.backTrack();
 
     // Print the solution
-    M.printMaze();
+    // M.printMaze();
 
     return 0;
 }
+
+//
