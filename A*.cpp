@@ -110,7 +110,7 @@ void PropogateImprovement(pair<int,int> neighbor, vector<vector<Node>>& graph)
 	for(int i=0; i<4; i++) {
 		if(neighbor.first != -1 && neighbor.second != -1) {
 			float new_g = graph[neighbor.first][neighbor.second].g + 1;
-			float g_s = graph[neighbor.first][neighbor.second].g + 1;
+			float g_s = graph[neighbor.first][neighbor.second].g;
 			if(new_g < g_s) {
 				graph[neighbors1[i].first][neighbors1[i].second].parent = &graph[neighbor.first][neighbor.second];
 				graph[neighbors1[i].first][neighbors1[i].second].g = new_g;
@@ -321,7 +321,7 @@ public:
 
 	                    else if(graph[neighbors[i].first][neighbors[i].second].inopen == true)
 	                    {
-	                    	float neigh_g = graph[current_coord.first][current_coord.second].g + 1;
+	                    	float neigh_g = graph[current_coord.first][current_coord.second].g;
 	                    	if(graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
 	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
@@ -334,7 +334,7 @@ public:
 
 	                    else if(graph[neighbors[i].first][neighbors[i].second].visited == true)
 	                    {
-	                    	float neigh_g = graph[current_coord.first][current_coord.second].g + 1;
+	                    	float neigh_g = graph[current_coord.first][current_coord.second].g;
 	                    	if(graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
 	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
