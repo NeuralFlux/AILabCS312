@@ -98,7 +98,7 @@ class TSP(object):
                     tour_costs.append(curr_cost)
                     tours.append(curr_tour)
             except TypeError as e:
-                print(num_ants)
+                # print(num_ants)
                 raise e
 
             if broken is True:
@@ -125,12 +125,14 @@ class TSP(object):
             last_cost = best_cost
 
             if identical_cost >= 10:
-                pheromone = init_pheromone
-                identical_cost = 0
+                if self.num_cities < 200:
+                    pheromone = init_pheromone
+                    identical_cost = 0
 
         # print best solution
-        print("Best Cost: ", best_cost)
-        print(best_tour)
+        # print("Best Cost: ", best_cost)
+        # print(best_tour)
+        print(*best_tour)
 
         return best_cost
 
