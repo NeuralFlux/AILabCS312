@@ -172,20 +172,12 @@ public:
     }
 
     // Manhattan Distance (Monotone)
-<<<<<<< HEAD
     float heuristic_1(pair<int, int> x) {
-=======
-    int heuristic_1(pair<int, int> x) {
->>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
     // Euclidean Distance (Underestimating Heuristic)
-<<<<<<< HEAD
     float heuristic_2(pair<int, int> x) {
-=======
-    int heuristic_2(pair<int, int> x) {
->>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
         return pow((x_2 + y_2), 0.5);
