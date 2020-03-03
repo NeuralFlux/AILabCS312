@@ -58,12 +58,7 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
 
     // Check and update neighbors which are empty and undiscovered
     for(int i = 0; i < 4; i++) {
-        if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Possible nodes only
-            // Check if node is visited/found already
-            // if((graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
-            //    graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true)) {
-            //     continue;
-            // }
+        if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Within graph
 
             // Possible to move only if free or goal
             char curr_char = graph[potential_nbrs[i].first][potential_nbrs[i].second].data;
@@ -79,13 +74,18 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
 
 // Helper for A*, update the costs of children of the node updated
 void PropogateImprovement(pair<int,int> node, vector<vector<Node>>& graph) {
+
+    // Initialise neighbours
 	pair<int, int> neighbors[4];
 	for(int i = 0; i < 4; i++) {
 		neighbors[i].first = -1;
 		neighbors[i].second = -1;
 	}
 
+    // Get neighbours
 	moveGen(node, neighbors, graph);
+
+    // Check only the children of current node
 	for(int i=0; i<4; i++) {
 		if(neighbors[i].first != -1 && neighbors[i].second != -1) {
             if(graph[neighbors[i].first][neighbors[i].second].parent == &graph[node.first][node.second]) {
@@ -171,20 +171,20 @@ public:
         graph[0][0].data = '0';
     }
 
-    // Manhattan Distance (Underestimating Heuristic)
-    int heuristic_1(pair<int, int> x) {
+    // Manhattan Distance (Monotone)
+    float heuristic_1(pair<int, int> x) {
         return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
-    // Euclidean Distance (Monotone)
-    int heuristic_2(pair<int, int> x) {
+    // Euclidean Distance (Underestimating Heuristic)
+    float heuristic_2(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
         return pow((x_2 + y_2), 0.5);
     }
 
     // Overestimating Heuristic
-    int heuristic_3(pair<int, int> x) {
+    float heuristic_3(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
         return (x_2 + y_2);
@@ -329,7 +329,7 @@ public:
         }
 
         // Print the number of visited states
-        cout<< countClosed() << endl;
+        // cout<< countClosed() << endl;
     }
 
     void backTrack() {
