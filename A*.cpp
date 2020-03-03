@@ -58,12 +58,7 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
 
     // Check and update neighbors which are empty and undiscovered
     for(int i = 0; i < 4; i++) {
-        if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Possible nodes only
-            // Check if node is visited/found already
-            // if((graph[potential_nbrs[i].first][potential_nbrs[i].second].visited == true ||
-            //    graph[potential_nbrs[i].first][potential_nbrs[i].second].found == true)) {
-            //     continue;
-            // }
+        if(potential_nbrs[i].first >= 0 && potential_nbrs[i].second >= 0) {  // Within graph
 
             // Possible to move only if free or goal
             char curr_char = graph[potential_nbrs[i].first][potential_nbrs[i].second].data;
@@ -79,13 +74,18 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
 
 // Helper for A*, update the costs of children of the node updated
 void PropogateImprovement(pair<int,int> node, vector<vector<Node>>& graph) {
+
+    // Initialise neighbours
 	pair<int, int> neighbors[4];
 	for(int i = 0; i < 4; i++) {
 		neighbors[i].first = -1;
 		neighbors[i].second = -1;
 	}
 
+    // Get neighbours
 	moveGen(node, neighbors, graph);
+
+    // Check only the children of current node
 	for(int i=0; i<4; i++) {
 		if(neighbors[i].first != -1 && neighbors[i].second != -1) {
             if(graph[neighbors[i].first][neighbors[i].second].parent == &graph[node.first][node.second]) {
@@ -171,12 +171,12 @@ public:
         graph[0][0].data = '0';
     }
 
-    // Manhattan Distance (Underestimating Heuristic)
+    // Manhattan Distance (Monotone)
     int heuristic_1(pair<int, int> x) {
         return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
-    // Euclidean Distance (Monotone)
+    // Euclidean Distance (Underestimating Heuristic)
     int heuristic_2(pair<int, int> x) {
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
@@ -239,7 +239,7 @@ public:
         open.push(&graph[current_coord.first][current_coord.second]);
         graph[current_coord.first][current_coord.second].visited = true;
         graph[current_coord.first][current_coord.second].found = true;
-        graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+        graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
         graph[current_coord.first][current_coord.second].g = 0;
         graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].heuristic;
         
@@ -257,7 +257,7 @@ public:
                 if(graph[current_coord.first][current_coord.second].parent != NULL) {
                     graph[current_coord.first][current_coord.second].g = graph[current_coord.first][current_coord.second].parent->g + 1;
                 }
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].g + graph[current_coord.first][current_coord.second].heuristic;
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
@@ -281,7 +281,7 @@ public:
                     		graph[neighbors[i].first][neighbors[i].second].visited == false)
 	                    {    
 	                    	graph[neighbors[i].first][neighbors[i].second].found = true;
-	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 	                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 	                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 	                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
@@ -295,7 +295,7 @@ public:
 	                    	float neigh_g = graph[neighbors[i].first][neighbors[i].second].g;
 	                    	if( graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
@@ -309,7 +309,7 @@ public:
 	                    	if(graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
 	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
