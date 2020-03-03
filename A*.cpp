@@ -88,6 +88,9 @@ void PropogateImprovement(pair<int,int> node, vector<vector<Node>>& graph) {
     // Check only the children of current node
 	for(int i=0; i<4; i++) {
 		if(neighbors[i].first != -1 && neighbors[i].second != -1) {
+            cout<< "***** Coord: " << neighbors[i].first << ", " << neighbors[i].second << ", g = " << graph[neighbors[i].first][neighbors[i].second].g <<endl;
+            // cout<< "Parent Coord: " << graph[9][11].parent->coord.first << ", " << graph[9][11].parent->coord.second <<endl;
+
             if(graph[neighbors[i].first][neighbors[i].second].parent == &graph[node.first][node.second]) {
                 float old_g = graph[neighbors[i].first][neighbors[i].second].g;
                 float node_g = graph[node.first][node.second].g;
@@ -96,11 +99,11 @@ void PropogateImprovement(pair<int,int> node, vector<vector<Node>>& graph) {
                     graph[neighbors[i].first][neighbors[i].second].parent = &graph[node.first][node.second];
                     graph[neighbors[i].first][neighbors[i].second].g = node_g + 1;
 
-                    if(graph[neighbors[i].first][neighbors[i].second].visited == true) {
-                        PropogateImprovement(neighbors[i], graph);
-                    }
+                    PropogateImprovement(neighbors[i], graph);
                 }
             }
+
+            cout<< "***** Coord: " << neighbors[i].first << ", " << neighbors[i].second << ", g = " << graph[neighbors[i].first][neighbors[i].second].g <<endl;
 		}
 	}
 }
@@ -233,13 +236,16 @@ public:
     }
 
     void A_star() {
+
+        cout<< "Dest Coord: " << dest_coord.first << ", " << dest_coord.second <<endl;
+
         // Set of nodes
         priority_queue <Node*, vector<Node*>, LessThanByHeu> open;
 
         open.push(&graph[current_coord.first][current_coord.second]);
         graph[current_coord.first][current_coord.second].visited = true;
         graph[current_coord.first][current_coord.second].found = true;
-        graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
+        graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
         graph[current_coord.first][current_coord.second].g = 0;
         graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].heuristic;
         
@@ -257,7 +263,7 @@ public:
                 if(graph[current_coord.first][current_coord.second].parent != NULL) {
                     graph[current_coord.first][current_coord.second].g = graph[current_coord.first][current_coord.second].parent->g + 1;
                 }
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
                 graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].g + graph[current_coord.first][current_coord.second].heuristic;
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
@@ -279,9 +285,9 @@ public:
                         // Case I - New node
                     	if(graph[neighbors[i].first][neighbors[i].second].found == false && 
                     		graph[neighbors[i].first][neighbors[i].second].visited == false)
-	                    {    
+	                    {
 	                    	graph[neighbors[i].first][neighbors[i].second].found = true;
-	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
 	                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 	                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 	                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
@@ -295,11 +301,17 @@ public:
 	                    	float neigh_g = graph[neighbors[i].first][neighbors[i].second].g;
 	                    	if( graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
 	                    	}
+
+                            // if(graph[neighbors[i].first][neighbors[i].second].f > 218 && (neighbors[i].first + neighbors[i].second) <= 94 ) {
+                            //     cout<< "error 2: ";
+                            //     cout<< "Coord: " << neighbors[i].first << ", " << neighbors[i].second;
+                            //     cout<< " g = " << graph[neighbors[i].first][neighbors[i].second].g << " h = " << graph[neighbors[i].first][neighbors[i].second].heuristic<<endl;
+                            // }
 	                    }
 
                         // Case III - Node in closed
@@ -308,19 +320,31 @@ public:
 	                    	float neigh_g = graph[neighbors[i].first][neighbors[i].second].g;
 	                    	if(graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
+                             cout<< "Coord: " << neighbors[i].first << ", " << neighbors[i].second << ", g = " << graph[neighbors[i].first][neighbors[i].second].g <<endl;
+                             cout<< "Current Coord: " << current_coord.first << ", " << current_coord.second << ", g = " << graph[current_coord.first][current_coord.second].g <<endl;
+                             cout<< "Parent Coord: " << graph[9][11].parent->coord.first << ", " << graph[9][11].parent->coord.second <<endl;
 	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
 		                        PropogateImprovement(neighbors[i], graph);                    	
 		                    }
+                            if(neighbors[i].first == 9 && neighbors[i].second == 11) {
+                                cout<< "Coord: (9, 11) g = " << graph[9][11].g <<endl;
+                                cout<< "Coord: " << graph[9][11].parent->coord.first << ", " << graph[9][11].parent->coord.second <<endl;
+                            }
+
+                            if(graph[neighbors[i].first][neighbors[i].second].f > 218 && (neighbors[i].first + neighbors[i].second) <= 94 ) {
+                                cout<< "error 3: ";
+                                cout<< "Coord: " << neighbors[i].first << ", " << neighbors[i].second;
+                                cout<< " g = " << graph[neighbors[i].first][neighbors[i].second].g << " h = " << graph[neighbors[i].first][neighbors[i].second].heuristic<<endl;
+                            }
 	                    }
 
-                        // if(neighbors[i].first == 4 && neighbors[i].second == 7) {
-                        //     cout<< "f val: " << graph[4][7].f << endl;
-                        //     cout<< "f val 5, 6: " << graph[5][6].f << endl;
-                        //     cout<< "dest coord: " << dest_coord.first <<", " << dest_coord.second <<endl;
+                        // if(neighbors[i].first == 4 && neighbors[i].second == 11) {
+                        //     cout<< "f val: " << graph[4][12].f << endl;
+                        //     cout<< "f val 5, 11: " << graph[5][11].f << endl;
                         // }
                         
                     }
@@ -337,14 +361,22 @@ public:
         int path_len = 1;
         Node *tracer = &graph[dest_coord.first][dest_coord.second];
         while(tracer->parent != NULL) {
+            
             graph[tracer->coord.first][tracer->coord.second].data = '0';
+            if(tracer->coord.first == 10 && tracer->coord.second == 11) {
+                // graph[9][11].data = 'f';
+                // cout << "\n\n\n\n\n\n";
+                // cout<< "Coord: (9, 11) g = " << graph[9][11].g <<endl;
+                // cout<< "Coord: " << graph[9][11].parent->coord.first << ", " << graph[9][11].parent->coord.second <<endl;
+            }
             tracer = tracer->parent;
             path_len++;
         }
 
-        // graph[5][6].data = 'f';
+        // graph[9][11].data = 'f';
 
         cout<< "Path Length: " << path_len<<endl;
+        // cout<< "Dest Length: " << graph[dest_coord.first][dest_coord.second].g <<endl;
     }
 };
 
@@ -355,6 +387,7 @@ int main(int argc, char* argv[]) {
 
     // Do the required search
     M.performSearch();
+
     // Reconstruct path
     M.backTrack();
 
