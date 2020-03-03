@@ -171,21 +171,13 @@ public:
         graph[0][0].data = '0';
     }
 
-    // Manhattan Distance (Monotone)
-<<<<<<< HEAD
+    // Manhattan Distance (Underestimating Heuristic)
     float heuristic_1(pair<int, int> x) {
-=======
-    int heuristic_1(pair<int, int> x) {
->>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
-    // Euclidean Distance (Underestimating Heuristic)
-<<<<<<< HEAD
+    // Euclidean Distance (Monotone)
     float heuristic_2(pair<int, int> x) {
-=======
-    int heuristic_2(pair<int, int> x) {
->>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
         return pow((x_2 + y_2), 0.5);
@@ -213,7 +205,7 @@ public:
         end = clock();
         cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
-        cout<< "Time taken: "<< cpu_time_used<<endl;
+        // cout<< "Time taken: "<< cpu_time_used<<endl;
     }
 
     void printMaze() {
@@ -352,7 +344,7 @@ public:
 
         // graph[5][6].data = 'f';
 
-        cout<< path_len<<endl;
+        cout<< "Path Length: " << path_len<<endl;
     }
 };
 
