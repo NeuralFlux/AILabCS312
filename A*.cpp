@@ -172,12 +172,20 @@ public:
     }
 
     // Manhattan Distance (Monotone)
+<<<<<<< HEAD
     float heuristic_1(pair<int, int> x) {
+=======
+    int heuristic_1(pair<int, int> x) {
+>>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         return (abs(x.first - dest_coord.first) + abs(x.second - dest_coord.second));
     }
 
     // Euclidean Distance (Underestimating Heuristic)
+<<<<<<< HEAD
     float heuristic_2(pair<int, int> x) {
+=======
+    int heuristic_2(pair<int, int> x) {
+>>>>>>> f79a6b10c4f1ca05110d21a37e004dbe994976a7
         float x_2 = pow((x.first - dest_coord.first), 2);
         float y_2 = pow((x.second - dest_coord.second), 2);
         return pow((x_2 + y_2), 0.5);
@@ -239,7 +247,7 @@ public:
         open.push(&graph[current_coord.first][current_coord.second]);
         graph[current_coord.first][current_coord.second].visited = true;
         graph[current_coord.first][current_coord.second].found = true;
-        graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+        graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
         graph[current_coord.first][current_coord.second].g = 0;
         graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].heuristic;
         
@@ -257,7 +265,7 @@ public:
                 if(graph[current_coord.first][current_coord.second].parent != NULL) {
                     graph[current_coord.first][current_coord.second].g = graph[current_coord.first][current_coord.second].parent->g + 1;
                 }
-                graph[current_coord.first][current_coord.second].heuristic = heuristic_1(current_coord);
+                graph[current_coord.first][current_coord.second].heuristic = heuristic_2(current_coord);
                 graph[current_coord.first][current_coord.second].f = graph[current_coord.first][current_coord.second].g + graph[current_coord.first][current_coord.second].heuristic;
                 graph[current_coord.first][current_coord.second].visited = true;
                 graph[current_coord.first][current_coord.second].found = true;
@@ -281,7 +289,7 @@ public:
                     		graph[neighbors[i].first][neighbors[i].second].visited == false)
 	                    {    
 	                    	graph[neighbors[i].first][neighbors[i].second].found = true;
-	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+	                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 	                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 	                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 	                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
@@ -295,7 +303,7 @@ public:
 	                    	float neigh_g = graph[neighbors[i].first][neighbors[i].second].g;
 	                    	if( graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
@@ -309,7 +317,7 @@ public:
 	                    	if(graph[current_coord.first][current_coord.second].g + 1 < neigh_g)
 	                    	{
 	                    		graph[neighbors[i].first][neighbors[i].second].found = true;
-		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_1(neighbors[i]);
+		                        graph[neighbors[i].first][neighbors[i].second].heuristic = heuristic_2(neighbors[i]);
 		                        graph[neighbors[i].first][neighbors[i].second].parent = &graph[current_coord.first][current_coord.second];
 		                        graph[neighbors[i].first][neighbors[i].second].g = graph[current_coord.first][current_coord.second].g + 1;
 		                        graph[neighbors[i].first][neighbors[i].second].f = graph[neighbors[i].first][neighbors[i].second].g + graph[neighbors[i].first][neighbors[i].second].heuristic;
