@@ -1,0 +1,22 @@
+- generate all children
+1. set or true if dims > 3 (safety)
+2. sequentially partition (more later)
+3. for each element in array, create and process child
+4. add child ptr to children
+5. get min h child and mark child
+
+- process child (*parent, *child)
+1. add parent ptr to child's parents
+2. if child dims <= 3, solved = true, update heuristic to actual
+   else or = true, calc heuristic
+
+(more later) 2.1. 2 loops. 1 to make (n-1)*2 children and 1 to assign each child dims, n = num matrices
+2.2 each outer loop iter, mark siblings
+
+- AO*
+1. add root to marked set. If root is terminal, label root as solved
+2. select non-terminal leaf node n of the subtree and generate its children
+3. cost-revise(n)
+
+- Cost revise
+1. Add <= 3 condition to solve small matrices

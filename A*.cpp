@@ -4,16 +4,17 @@
 #include <vector>
 #include <queue>
 #include <cmath>
+#include <list> 
+#include <iterator> 
 
 using namespace std;
 
 class Node {
   public:
-  // Found means it's added to the stack
-  // Visited means it's been traversed
-    pair<int, int> coord;
-    char data;
-    bool visited;
+
+    vector<int> dims;
+    bool or_node;
+    bool terminal;
     bool found;
     float heuristic;
     float g;
@@ -71,40 +72,6 @@ void moveGen(pair<int, int> current_coord, pair<int, int> neighbors[], vector<ve
     }
     return;
 }
-
-// Helper for A*, update the costs of children of the node updated
-void PropogateImprovement(pair<int,int> node, vector<vector<Node>>& graph) {
-
-    // Initialise neighbours
-	pair<int, int> neighbors[4];
-	for(int i = 0; i < 4; i++) {
-		neighbors[i].first = -1;
-		neighbors[i].second = -1;
-	}
-
-    // Get neighbours
-	moveGen(node, neighbors, graph);
-
-    // Check only the children of current node
-	for(int i=0; i<4; i++) {
-		if(neighbors[i].first != -1 && neighbors[i].second != -1) {
-            if(graph[neighbors[i].first][neighbors[i].second].parent == &graph[node.first][node.second]) {
-                float old_g = graph[neighbors[i].first][neighbors[i].second].g;
-                float node_g = graph[node.first][node.second].g;
-
-                if(node_g + 1 < old_g) {
-                    graph[neighbors[i].first][neighbors[i].second].parent = &graph[node.first][node.second];
-                    graph[neighbors[i].first][neighbors[i].second].g = node_g + 1;
-
-                    if(graph[neighbors[i].first][neighbors[i].second].visited == true) {
-                        PropogateImprovement(neighbors[i], graph);
-                    }
-                }
-            }
-		}
-	}
-}
-
 
 // Compare the current state to goal state
 bool goalTest(pair<int, int> current_coord, pair<int, int> dest_coord) {
