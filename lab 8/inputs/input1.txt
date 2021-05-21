@@ -1,0 +1,2 @@
+4,0.12,-0.5,1,-0.01
+grid_size,p_err,d_pen,fin_rew,step_pen
